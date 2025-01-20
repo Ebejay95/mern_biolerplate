@@ -26,45 +26,105 @@ $(X)\n\
 #--------------                      GENERAL                      -------------#
 #------------------------------------------------------------------------------#
 
-CONTAINER=mern
+FRONTEND_DEV=app-frontend-dev
+BACKEND_DEV=app-backend-dev
+FRONTEND_PROD=app-frontend-prod
+BACKEND_PROD=app-backend-prod
+NETWORK_DEV=app-network-dev
+NETWORK_PROD=app-network-prod
 
 #------------------------------------------------------------------------------#
 #--------------                       RULES                       -------------#
 #------------------------------------------------------------------------------#
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re development production container-build container-up container prune enter logs
 
-all:
-	@npm install
-	@npm run start
+# Default rule (both development and production)
+all: development
 
+# Development-specific setup
+development: container-build-dev container-up-dev
+	@echo "$(GREEN)Development environment is ready!$(X)"
+	@echo "$(CYAN)Frontend available at: http://localhost:3000$(X)"
+	@echo "$(CYAN)Backend available at: http://localhost:4000$(X)"
 
-container-build:
-	@if ! docker ps | grep -q $(CONTAINER); then \
-		echo "$(YELLOW)Building the container environment$(X)"; \
-		docker compose -f ./docker-compose.yml build --no-cache; \
-	else \
-		echo "$(YELLOW)Container already built.. skip build process$(X)"; \
-	fi
+# Production-specific setup
+production: container-build-prod container-up-prod
+	@echo "$(GREEN)Production environment is ready!$(X)"
+	@echo "$(CYAN)Frontend available at: http://localhost:3000$(X)"
+	@echo "$(CYAN)Backend available at: http://localhost:4000$(X)"
 
-container-up:
-	@if ! docker ps | grep -q $(CONTAINER); then \
-		echo "$(YELLOW)Starting the container environment$(X)"; \
-		docker compose -p $(CONTAINER) -f ./docker-compose.yml up -d; \
-	else \
-		echo "$(YELLOW)Container already running.. skip its creation$(X)"; \
-	fi
+# Build the development container
+container-build-dev:
+	@echo "$(YELLOW)Building the development container environment$(X)"
+	@docker compose -f ./docker-compose.yml build --no-cache
 
-container:
-	@make container-build
-	@make container-up
-	@docker exec -it $(CONTAINER) bash
+# Build the production container
+container-build-prod:
+	@echo "$(YELLOW)Building the production container environment$(X)"
+	@docker compose -f ./docker-compose.prod.yml build --no-cache
 
+# Start the development container
+container-up-dev:
+	@echo "$(YELLOW)Starting the development container environment$(X)"
+	@docker compose -f ./docker-compose.yml up -d
+
+# Start the production container
+container-up-prod:
+	@echo "$(YELLOW)Starting the production container environment$(X)"
+	@docker compose -f ./docker-compose.prod.yml up -d
+
+# Stop and remove containers
 prune:
-	@if docker ps -a | grep -q $(NAME); then \
-		echo "$(RED)Removing existing container...$(X)"; \
-		docker stop $(NAME) && docker rm $(NAME); \
+	@echo "$(RED)Stopping and removing development containers...$(X)"
+	@docker stop $(FRONTEND_DEV) $(BACKEND_DEV) 2>/dev/null || true
+	@docker rm $(FRONTEND_DEV) $(BACKEND_DEV) 2>/dev/null || true
+	@echo "$(RED)Stopping and removing production containers...$(X)"
+	@docker stop $(FRONTEND_PROD) $(BACKEND_PROD) 2>/dev/null || true
+	@docker rm $(FRONTEND_PROD) $(BACKEND_PROD) 2>/dev/null || true
+	@echo "$(RED)Removing networks...$(X)"
+	@docker network rm $(NETWORK_DEV) 2>/dev/null || true
+	@docker network rm $(NETWORK_PROD) 2>/dev/null || true
+	@echo "$(GREEN)All containers and networks removed!$(X)"
+
+# Show logs for all containers
+logs:
+	@if docker ps | grep -q $(FRONTEND_DEV); then \
+		echo "$(YELLOW)Development Logs:$(X)"; \
+		docker logs $(FRONTEND_DEV); \
+		docker logs $(BACKEND_DEV); \
+	elif docker ps | grep -q $(FRONTEND_PROD); then \
+		echo "$(YELLOW)Production Logs:$(X)"; \
+		docker logs $(FRONTEND_PROD); \
+		docker logs $(BACKEND_PROD); \
 	else \
-		echo "$(YELLOW)No container named '$(NAME)' to remove.$(X)"; \
+		echo "$(RED)No containers running$(X)"; \
 	fi
-	@echo "$(GREEN)All done!$(X)"
+
+# Enter container shell
+enter-frontend-dev:
+	@docker exec -it $(FRONTEND_DEV) /bin/sh
+
+enter-backend-dev:
+	@docker exec -it $(BACKEND_DEV) /bin/sh
+
+enter-frontend-prod:
+	@docker exec -it $(FRONTEND_PROD) /bin/sh
+
+enter-backend-prod:
+	@docker exec -it $(BACKEND_PROD) /bin/sh
+
+# Stop containers
+stop:
+	@echo "$(YELLOW)Stopping all containers...$(X)"
+	@docker compose -f ./docker-compose.yml down 2>/dev/null || true
+	@docker compose -f ./docker-compose.prod.yml down 2>/dev/null || true
+	@echo "$(GREEN)All containers stopped!$(X)"
+
+# Restart containers
+restart: stop
+	@if [ -f ./docker-compose.prod.yml ] && docker ps -a | grep -q $(FRONTEND_PROD); then \
+		make production; \
+	else \
+		make development; \
+	fi

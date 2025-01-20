@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  frontend:
+    container_name: app-frontend-prod
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - VITE_API_URL=http://api.yourdomain.com
+    secrets:
+      - frontend_port
+    depends_on:
+      - backend
+
+  backend:
+    container_name: app-backend-prod
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    environment:
+      - NODE_ENV=production
+      - FRONTEND_URL=https://yourdomain.com
+    secrets:
+      - backend_port
+      - api_key
+
+secrets:
+  frontend_port:
+    file: ./secrets/frontend_port.txt
+  backend_port:
+    file: ./secrets/backend_port.txt
+  api_key:
+    file: ./secrets/api_key.txt
+
+networks:
+  app-network:
+    name: app-network-prod
+    driver: bridge
