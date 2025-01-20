@@ -34,3 +34,8 @@ pids
 
 # dotenv environment variable files
 .env
+
+# Secrets
+secrets/
+**/secrets/
+secrets.*
