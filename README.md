@@ -138,3 +138,29 @@ This project is licensed under the ISC License - see the LICENSE file for detail
 ## Support
 
 For support, please open an issue in the GitHub repository.
+
+## Environment
+
+setup .env, .env.development and .env.production in the root of the project.
+
+```
+FRONTEND_PORT=
+BACKEND_PORT=
+NODE_ENV=
+FRONTEND_URL=
+HOST=
+REMIX_DEV_ORIGIN=
+
+# Database
+MONGODB_URI=
+
+# Email
+EMAIL_HOST=
+EMAIL_PORT=
+EMAIL_SERVICE=
+EMAIL_USER=
+EMAIL_PASSWORD=
+
+# Security
+BCRYPT_SALT_ROUNDS=
+```

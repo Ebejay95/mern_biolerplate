@@ -67,12 +67,11 @@ container-build-prod:
 # Start the development container
 container-up-dev:
 	@echo "$(YELLOW)Starting the development container environment$(X)"
-	@docker compose -f ./docker-compose.yml up -d
+	@docker compose --env-file .env.development up -d
 
-# Start the production container
 container-up-prod:
 	@echo "$(YELLOW)Starting the production container environment$(X)"
-	@docker compose -f ./docker-compose.prod.yml up -d
+	@docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 
 # Stop and remove containers
 prune:

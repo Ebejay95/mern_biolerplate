@@ -6,33 +6,25 @@ services:
     build:
       context: ./frontend
       dockerfile: dev/Dockerfile
+    env_file:
+      - .env
+      - .env.development
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - VITE_API_URL=http://localhost:${BACKEND_PORT:-4000}
-    depends_on:
-      - backend
 
   backend:
     container_name: app-backend-dev
     build:
       context: ./backend
       dockerfile: dev/Dockerfile
+    env_file:
+      - .env
+      - .env.development
     ports:
       - "${BACKEND_PORT:-4000}:4000"
     volumes:
       - ./backend:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - PORT=4000
-      - FRONTEND_URL=http://localhost:3000
-
-networks:
-  app-network:
-    name: app-network-dev
-    driver: bridge

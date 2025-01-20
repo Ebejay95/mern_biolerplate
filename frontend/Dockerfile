@@ -1,21 +1,24 @@
-FROM node:20-alpine as builder
+FROM node:20-alpine as build
 
 WORKDIR /app
-
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine
-
+FROM node:20-alpine as production
 WORKDIR /app
 
-COPY --from=builder /app/build ./build
-COPY --from=builder /app/package*.json ./
-RUN npm install --production
+COPY --from=build /app/package*.json ./
+COPY --from=build /app/build ./build
+COPY --from=build /app/public ./public
 
-EXPOSE 3000
+RUN npm ci --omit=dev
 
-CMD ["npm", "run", "start"]
+ENV NODE_ENV=production
+ENV PORT=3000
+# Add this line
+ENV HOST=0.0.0.0
+
+CMD ["sh", "-c", "NODE_ENV=production REMIX_DEV_ORIGIN=http://${HOST}:${PORT} npm run start"]
